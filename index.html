@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>下拉刷新和上拉加载</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            height: 100%;
+        }
+
+        header {
+            width: 100%;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            background-color: orange;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        main {
+            width: 100%;
+            background-color: lightblue;
+            position: absolute;
+            top: 50px;
+            bottom: 40px;
+        }
+
+        main > #listWrapper {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        footer {
+            width: 100%;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            background-color: black;
+            color: #fff;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .pullingUpTip {
+            width: 100%;
+            height: 20px;
+            text-align: center;
+            background-color: gray;
+            color: black;
+        }
+
+        .pullingDownTip {
+            width: 100%;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            background-color: gray;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<header>头部</header>
+<main>
+    <div id="listWrapper">
+        <ul id='ListContent'></ul>
+        <p class='pullingDownTip'>我要下拉刷新...</p>
+    </div>
+</main>
+<footer>底部</footer>
+
+<script src="./bscroll.min.js"></script>
+<script>
+    window.onload = function () {
+        var listWrapper = document.querySelector('#listWrapper');
+        var item = '原始数据列表';
+        var list = [];
+        for (var i = 0; i < 40; i++) {
+            list[i] = item;
+        }
+        // 1、先渲染出DOM列表
+        renderDom(list);
+        // 2、初始化SBcroll
+        // options配置文件
+        var options = {
+            click: true,
+            probeType: 3, // 滑动过程中派发scroll事件
+            pullDownRefresh: {
+                threshold: 50, // 当下拉到超过顶部 50px 时，触发 pullingDown 事件
+                stop: 40 // 刷新数据的过程中，回弹停留在距离顶部还有 20px 的位置
+            },
+            pullUpLoad: {
+                threshold: -20 // 在上拉到超过底部 20px 时，触发 pullingUp 事件
+            },
+            scrollbar: true
+        };
+        var BS = new BScroll(listWrapper, options);
+
+
+        var loading = false;
+        var pullingDownTip = document.querySelector('.pullingDownTip');
+        var pullingUpTip = document.querySelector('.pullingUpTip');
+        var ListContent = document.querySelector('#ListContent');
+        var count = 0;
+        // 监听下拉刷新事件
+        BS.on('pullingDown', function () {
+            if (!loading) {
+                setTimeout(function () {
+                    console.log('下拉刷新成功！')
+                    pullingDownTip.style.display = 'none';
+                    BS.finishPullDown(); // 通知BS,下拉事件结束
+                }, 2000);
+            }
+        });
+        // 监听上拉加载事件
+        BS.on('pullingUp', function () {
+            pullingUpTip.innerText = '获取数据中...';
+            setTimeout(function () {
+                var node = document.createElement('p');
+                node.innerText = '我是下拉后追加的数据列-'+count;
+                ListContent.insertBefore(node, pullingUpTip);
+                pullingUpTip.innerText = '上拉刷新';
+                BS.finishPullUp();
+                BS.refresh();//重新计算DOM
+                count++;
+                console.log('上拉加载成功！');
+            }, 1000);
+        });
+        // 监听滚动事件
+        BS.on('scroll', function (pos) {
+            if (pos.y >= 41) {
+                pullingDownTip.textContent = '放手即可刷新数据';
+                pullingDownTip.style.display = 'block';
+            } else {
+                pullingDownTip.textContent = '刷新数据中...';
+            }
+        })
+
+        /**
+         * 通用函数
+         * @param list：传入的数据列表
+         */
+        // 渲染dom列表
+        function renderDom(list) {
+            var getUl = document.getElementById('ListContent');
+            var html = '';
+            list.forEach(function (v, i) {
+                html += `
+                <li>${v}</li>
+            `;
+            })
+            html += `
+            <p class='pullingUpTip'>上拉刷新</p>
+            `;
+            getUl.innerHTML = html;
+        }
+
+
+    }
+</script>
+</body>
+</html>
