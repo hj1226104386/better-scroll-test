@@ -56,7 +56,7 @@
 
         .pullingUpTip {
             width: 100%;
-            height: 20px;
+            height: 30px;
             text-align: center;
             background-color: gray;
             color: black;
@@ -89,8 +89,12 @@
 <script>
     window.onload = function () {
         var listWrapper = document.querySelector('#listWrapper');
+        var pullingDownTip = document.querySelector('.pullingDownTip');
+        var ListContent = document.querySelector('#ListContent');
         var item = '原始数据列表';
-        var list = [];
+        var list = [];  // 数据列表
+        var loading = false; // 是否正在加载数据 （节流阀）
+        var count = 0;
         for (var i = 0; i < 40; i++) {
             list[i] = item;
         }
@@ -111,13 +115,6 @@
             scrollbar: true
         };
         var BS = new BScroll(listWrapper, options);
-
-
-        var loading = false;
-        var pullingDownTip = document.querySelector('.pullingDownTip');
-        var pullingUpTip = document.querySelector('.pullingUpTip');
-        var ListContent = document.querySelector('#ListContent');
-        var count = 0;
         // 监听下拉刷新事件
         BS.on('pullingDown', function () {
             if (!loading) {
@@ -125,11 +122,12 @@
                     console.log('下拉刷新成功！')
                     pullingDownTip.style.display = 'none';
                     BS.finishPullDown(); // 通知BS,下拉事件结束
-                }, 2000);
+                }, 1000);
             }
         });
         // 监听上拉加载事件
         BS.on('pullingUp', function () {
+            var pullingUpTip = document.querySelector('.pullingUpTip');
             pullingUpTip.innerText = '获取数据中...';
             setTimeout(function () {
                 var node = document.createElement('p');
@@ -156,7 +154,7 @@
          * 通用函数
          * @param list：传入的数据列表
          */
-        // 渲染dom列表
+        // 渲染数据列表
         function renderDom(list) {
             var getUl = document.getElementById('ListContent');
             var html = '';
@@ -166,7 +164,7 @@
             `;
             })
             html += `
-            <p class='pullingUpTip'>上拉刷新</p>
+            <h2 class='pullingUpTip'>上拉刷新</h2>
             `;
             getUl.innerHTML = html;
         }
